@@ -34,6 +34,7 @@ class TaskRecord(BaseModel):
     task_id: str
     objective: str
     portal_id: str
+    custom_url: str | None = None
     status: TaskState = "queued"
     stage: str = "initialized"
     progress: int = 0
@@ -53,13 +54,19 @@ class TaskStore:
         self._approval_decisions: dict[str, bool] = {}
         self._lock = asyncio.Lock()
 
-    async def create_task(self, objective: str, portal_id: str = "up-scholarship") -> TaskRecord:
+    async def create_task(
+        self,
+        objective: str,
+        portal_id: str = "up-scholarship",
+        custom_url: str | None = None
+    ) -> TaskRecord:
         async with self._lock:
             task_id = str(uuid.uuid4())
             record = TaskRecord(
                 task_id=task_id,
                 objective=objective.strip(),
                 portal_id=portal_id,
+                custom_url=custom_url,
                 status="queued",
                 stage="queued"
             )

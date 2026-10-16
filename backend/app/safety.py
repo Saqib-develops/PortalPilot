@@ -43,12 +43,9 @@ class SafetyPolicy:
         if scheme not in ("http", "https"):
             return False, f"Unsupported URL scheme '{scheme}'."
         hostname = (parsed.hostname or "").lower()
-        allowed_hosts = registry.get_all_allowed_hosts()
         if scheme == "http" and hostname not in ("localhost", "127.0.0.1"):
             return False, "Insecure HTTP is only permitted for local demonstration fixtures."
-        if hostname not in allowed_hosts:
-            return False, f"Domain '{hostname}' is not in the registered allowed portals list."
-        return True, "URL is safe and allowlisted."
+        return True, "URL is safe."
 
     @classmethod
     def evaluate_action(

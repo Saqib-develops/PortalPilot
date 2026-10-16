@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app import main
+from app.ai_provider import DeterministicProvider
+from app.browser_engine import browser_service
 from app.safety import SafetyPolicy
 from app.registry import registry
 
@@ -51,9 +54,16 @@ def test_safety_policy_actions():
     assert eval_submit.requires_approval is True
 
 def test_task_lifecycle():
-    create_res = client.post("/api/tasks", json={
+    denied_res = client.post("/api/tasks", json={
         "objective": "Find instructions for student registration",
         "portal_id": "up-scholarship"
+    })
+    assert denied_res.status_code == 403
+
+    create_res = client.post("/api/tasks", json={
+        "objective": "Find instructions for student registration",
+        "portal_id": "up-scholarship",
+        "access_confirmed": True,
     })
     assert create_res.status_code == 201
     task_data = create_res.json()
@@ -81,3 +91,61 @@ def test_assistant_chat():
     data = response.json()
     assert "response" in data
     assert len(data["response"]) > 0
+
+def test_browser_launch_opens_portal_in_new_tab(monkeypatch):
+    opened_urls = []
+
+    async def open_new_tab(url):
+        opened_urls.append(url)
+        return {"url": url, "title": "UP Scholarship", "success": True}
+
+    monkeypatch.setattr(browser_service, "open_new_tab", open_new_tab)
+    response = client.post("/api/browser/launch", json={"portal_id": "up-scholarship"})
+
+    assert response.status_code == 200
+    assert opened_urls == ["https://scholarship.up.gov.in/"]
+    assert response.json()["title"] == "UP Scholarship"
+
+def test_assistant_chat_crawls_for_user_query(monkeypatch):
+    captured_queries = []
+
+    async def get_state():
+        return {"title": "UP Scholarship", "url": "https://scholarship.up.gov.in/"}
+
+    async def crawl_page(query=None):
+        captured_queries.append(query)
+        return {"query_matches": [{"type": "section", "text": "Eligibility requirements"}]}
+
+    class StubProvider:
+        def chat(self, message, context):
+            assert context["query_matches"][0]["text"] == "Eligibility requirements"
+            return "Found eligibility requirements."
+
+    monkeypatch.setattr(browser_service, "get_state", get_state)
+    monkeypatch.setattr(browser_service, "crawl_page", crawl_page)
+    monkeypatch.setattr(main, "get_ai_provider", lambda: (StubProvider(), "stub"))
+
+    response = client.post("/api/assistant/chat", json={
+        "message": "Find eligibility requirements",
+        "portal_id": "up-scholarship",
+    })
+
+    assert response.status_code == 200
+    assert captured_queries == ["Find eligibility requirements"]
+    assert response.json()["response"] == "Found eligibility requirements."
+    assert response.json()["crawl_matches"][0]["text"] == "Eligibility requirements"
+
+def test_deterministic_agent_plans_application_navigation():
+    plan = DeterministicProvider().plan(
+        "Open the application form",
+        {
+            "title": "UP Scholarship",
+            "links": [{
+                "text": "Student Registration",
+                "url": "https://scholarship.up.gov.in/registration.aspx",
+            }],
+        },
+    )
+
+    assert plan.action == "navigate"
+    assert plan.target_url == "https://scholarship.up.gov.in/registration.aspx"

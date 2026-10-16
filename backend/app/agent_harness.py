@@ -17,7 +17,7 @@ class AgentHarness:
             return
 
         portal = registry.get_portal(task.portal_id)
-        start_url = portal.url if portal else "https://scholarship.up.gov.in/"
+        start_url = task.custom_url or (portal.url if portal else "https://scholarship.up.gov.in/")
 
         await task_store.update_task(
             task_id=task_id,

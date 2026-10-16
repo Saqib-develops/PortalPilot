@@ -34,12 +34,12 @@ class DeterministicProvider(AIProviderInterface):
         for link in links:
             text = (link.get("text") or "").lower()
             url = link.get("url") or ""
-            if any(term in text for term in ["registration", "register", "apply", "student", "apply online"]) and any(term in task_lower for term in ["register", "apply", "sign up", "admission"]):
+            if any(term in text for term in ["registration", "register", "apply", "student", "apply online"]) and any(term in task_lower for term in ["register", "registration", "apply", "application", "form", "sign up", "admission"]):
                 return PlanDecision(
                     action="navigate",
                     target_url=url,
                     rationale=f"Deterministic rule matched keyword in portal link: '{link.get('text')}'.",
-                    response=f"Found direct link '{link.get('text')}' on {title}. Ready to navigate upon approval.",
+                    response=f"Found the '{link.get('text')}' link on {title}. Opening it now.",
                     provider="deterministic"
                 )
             if any(term in text for term in ["instruction", "guideline", "rule", "faq", "help"]) and any(term in task_lower for term in ["instruction", "guideline", "rule", "document", "requirement", "help"]):
@@ -90,6 +90,14 @@ class DeterministicProvider(AIProviderInterface):
     def chat(self, message: str, context: dict[str, Any]) -> str:
         page_title = context.get("title", "Portal page")
         url = context.get("url", "")
+        matches = context.get("query_matches", [])
+        if matches:
+            findings = "; ".join(
+                " ".join(str(match.get("text", "")).split())[:180]
+                for match in matches[:4]
+                if match.get("text")
+            )
+            return f"[Page crawl] Relevant content found on '{page_title}': {findings}"
         return f"[Deterministic Guide] Currently observing '{page_title}' at {url}. You can ask about student registration, guidelines, or form fields."
 
 class GenAIProvider(AIProviderInterface):
@@ -174,6 +182,7 @@ Rules:
 You are PortalPilot Assistant helping a user with a government portal.
 Current page: {context.get('title')} ({context.get('url')})
 Observed text: {context.get('visible_text_snippet', '')}
+Query-matched page content: {json.dumps(context.get('query_matches', [])[:10], ensure_ascii=False)}
 
 User question: {message}
 

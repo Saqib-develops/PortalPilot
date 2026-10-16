@@ -5,6 +5,8 @@ PortalPilot is an open-source AI browser agent designed for Hacktoberfest 2026 b
 ## Core Capabilities
 
 - Playwright browser engine managing live page state, headings, links, interactive buttons, and non-sensitive inputs.
+- Explicit page-access notice before the workspace or on-page agent starts inspecting or controlling a portal; access can be revoked.
+- Live browser screenshots and task progress while the agent scrolls and navigates the selected portal.
 - Provider abstraction supporting Gemma 4 (`gemma-4-26b-a4b-it`), Gemini, or deterministic fallback if API keys are absent.
 - Configurable portal registry (`portals.json`) with allowlisted domains and entry points.
 - Safety policy blocking unauthorized cross-domain redirects, dangerous URL schemes, passwords, OTPs, captchas, and automated final submissions.
@@ -52,12 +54,14 @@ Interactive OpenAPI documentation is available at `http://127.0.0.1:8000/docs`.
 Key Endpoints:
 - `GET /health` or `GET /api/health`: System health and dependency readiness.
 - `GET /api/portals`: Registered portals and entry points.
-- `POST /api/tasks`: Initiate a natural-language agent task.
+- `POST /api/tasks`: Initiate a natural-language agent task after the user confirms access (`access_confirmed: true`).
 - `GET /api/tasks/{task_id}`: Retrieve task lifecycle state, progress, and verified steps.
 - `POST /api/tasks/{task_id}/approve`: Approve a pending sensitive action.
 - `POST /api/tasks/{task_id}/cancel`: Cancel a task.
 - `GET /api/browser/state`: Observe active browser URL, title, visible text, and interactive elements.
 - `POST /api/browser/navigate`: Navigate to an allowlisted portal or page.
+- `POST /api/browser/launch`: Open the selected portal in a new headed-browser tab with the PortalPilot bubble.
+- `POST /api/browser/crawl`: Crawl the active page; an optional `query` returns matching page content.
 - `POST /api/browser/action`: Execute a validated safe click, fill, or select.
 - `POST /api/assistant/chat`: Conversational guidance grounded in observed portal pages.
 - `POST /api/portal/plan`: Observe portal and generate a structured single-step proposal.
@@ -77,7 +81,7 @@ $env:PYTHONPATH="backend"
 1. Open `http://localhost:5173` in your browser.
 2. Select target portal: **PortalPilot Safe Demo Playground** (or **UP Scholarship Portal**).
 3. Switch mode to **Plan Only** and click **Ask PortalPilot to Plan**. Observe that Gemma / deterministic provider inspects the page, extracts links and form fields, and proposes a safe action without mutating page state.
-4. Switch mode to **Autonomous Execution** and submit: `Check student registration form`.
-5. Observe live task progress, verified steps, and page inspection in the Agent Activity timeline.
+4. Submit `Open student registration form`. Review the access notice and click **Allow access & continue**.
+5. Watch the live portal screenshot and headed browser as the agent scrolls to and opens the matching registration link.
 6. When attempting sensitive inputs or submission, observe that the agent pauses and presents human approval controls.
-7. Click the chat icon in the topbar to test grounded conversational assistance.
+7. Use the on-page PortalPilot bubble to ask a question; it crawls the active page for query-matched content before replying.

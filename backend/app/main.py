@@ -3,9 +3,9 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel, Field
 
 from .registry import registry, PortalDefinition
@@ -43,12 +43,21 @@ app.add_middleware(
 class CreateTaskRequest(BaseModel):
     objective: str = Field(min_length=1, max_length=1000)
     portal_id: str = "up-scholarship"
+    custom_url: str | None = None
+    access_confirmed: bool = False
 
 class ApproveActionRequest(BaseModel):
     action_id: str
 
 class NavigateRequest(BaseModel):
     url: str
+
+class LaunchRequest(BaseModel):
+    portal_id: str = "up-scholarship"
+    custom_url: str | None = None
+
+class HighlightRequest(BaseModel):
+    selector: str
 
 class ActionRequest(BaseModel):
     action_type: str
@@ -59,6 +68,9 @@ class ActionRequest(BaseModel):
 class AssistantChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     portal_id: str = "up-scholarship"
+
+class CrawlRequest(BaseModel):
+    query: str | None = Field(default=None, max_length=1000)
 
 class InspectResponse(BaseModel):
     status: str
@@ -98,6 +110,13 @@ async def health():
         }
     }
 
+@app.get("/static/bubble_widget.js")
+async def get_bubble_widget():
+    widget_path = Path(__file__).parent / "static" / "bubble_widget.js"
+    if not widget_path.exists():
+        raise HTTPException(status_code=404, detail="Widget script not found.")
+    return FileResponse(widget_path, media_type="application/javascript")
+
 @app.get("/fixture/demo-portal", response_class=HTMLResponse)
 async def get_demo_fixture():
     fixture_path = Path(__file__).parent / "static" / "demo_portal.html"
@@ -111,10 +130,19 @@ async def list_portals():
 
 @app.post("/api/tasks", response_model=TaskRecord, status_code=201)
 async def create_task(request: CreateTaskRequest, background_tasks: BackgroundTasks):
+    if not request.access_confirmed:
+        raise HTTPException(
+            status_code=403,
+            detail="Review the portal access notice and confirm before starting the agent.",
+        )
     portal = registry.get_portal(request.portal_id)
     if not portal:
         raise HTTPException(status_code=400, detail=f"Unsupported portal_id: '{request.portal_id}'.")
-    task = await task_store.create_task(objective=request.objective, portal_id=request.portal_id)
+    task = await task_store.create_task(
+        objective=request.objective,
+        portal_id=request.portal_id,
+        custom_url=request.custom_url,
+    )
     background_tasks.add_task(AgentHarness.run_task, task.task_id)
     return task
 
@@ -161,6 +189,48 @@ async def browser_navigate(request: NavigateRequest):
     except BrowserEngineError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+@app.post("/api/browser/navigate-url")
+async def browser_navigate_custom_url(request: NavigateRequest):
+    try:
+        result = await browser_service.navigate(request.url)
+        return {"status": "success", "url": result["url"], "title": result["title"]}
+    except BrowserEngineError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/api/browser/launch")
+async def browser_launch(request: LaunchRequest):
+    if request.custom_url:
+        url = request.custom_url
+    else:
+        portal = registry.get_portal(request.portal_id)
+        url = portal.url if portal else "https://scholarship.up.gov.in/"
+    try:
+        result = await browser_service.open_new_tab(url)
+        return {"status": "success", "portal_id": request.portal_id, "url": result["url"], "title": result["title"]}
+    except BrowserEngineError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+@app.get("/api/browser/screenshot")
+async def browser_screenshot():
+    try:
+        png_data = await browser_service.take_screenshot()
+        return Response(content=png_data, media_type="image/png")
+    except BrowserEngineError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+@app.post("/api/browser/crawl")
+async def browser_crawl(request: CrawlRequest | None = None):
+    try:
+        crawl_data = await browser_service.crawl_page(query=request.query if request else None)
+        return {"status": "success", "crawl": crawl_data}
+    except BrowserEngineError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+@app.post("/api/browser/highlight")
+async def browser_highlight(request: HighlightRequest):
+    success = await browser_service.highlight_element(request.selector)
+    return {"status": "success", "highlighted": success, "selector": request.selector}
+
 @app.post("/api/browser/action")
 async def browser_execute_action(request: ActionRequest):
     try:
@@ -180,12 +250,15 @@ async def browser_execute_action(request: ActionRequest):
 async def assistant_chat(request: AssistantChatRequest):
     try:
         state = await browser_service.get_state()
-    except Exception:
+        crawl_data = await browser_service.crawl_page(query=request.message)
+        state["query_matches"] = crawl_data.get("query_matches", [])
+    except BrowserEngineError:
         portal = registry.get_portal(request.portal_id)
         state = {
             "title": portal.name if portal else "Government Portal",
             "url": portal.url if portal else "",
-            "visible_text_snippet": portal.description if portal else ""
+            "visible_text_snippet": portal.description if portal else "",
+            "query_matches": [],
         }
     provider, _ = get_ai_provider()
     answer = provider.chat(request.message, state)
@@ -193,7 +266,8 @@ async def assistant_chat(request: AssistantChatRequest):
         "status": "success",
         "message": request.message,
         "response": answer,
-        "grounded_page": state.get("title", "Portal")
+        "grounded_page": state.get("title", "Portal"),
+        "crawl_matches": state.get("query_matches", []),
     }
 
 @app.post("/api/portal/inspect", response_model=InspectResponse)

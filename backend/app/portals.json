@@ -1,5 +1,28 @@
 [
   {
+    "id": "portalpilot-demo",
+    "name": "PortalPilot Safe Demo Playground",
+    "state": "Universal",
+    "url": "http://127.0.0.1:8000/fixture/demo-portal",
+    "allowed_hosts": [
+      "127.0.0.1",
+      "localhost"
+    ],
+    "description": "Safe offline demonstration fixture modeling scholarship application workflows, fields, and safety boundaries.",
+    "category": "demonstration",
+    "entry_points": [
+      {
+        "name": "Demo Application",
+        "url": "http://127.0.0.1:8000/fixture/demo-portal"
+      }
+    ],
+    "sensitive_actions": [
+      "submit_application",
+      "enter_otp",
+      "fee_payment"
+    ]
+  },
+  {
     "id": "up-scholarship",
     "name": "UP Scholarship Portal",
     "state": "Uttar Pradesh",
@@ -32,26 +55,47 @@
     ]
   },
   {
-    "id": "portalpilot-demo",
-    "name": "PortalPilot Safe Demo Playground",
-    "state": "Universal",
-    "url": "http://127.0.0.1:8000/fixture/demo-portal",
+    "id": "nsp-scholarship",
+    "name": "National Scholarship Portal (NSP)",
+    "state": "National / India",
+    "url": "https://scholarships.gov.in/",
     "allowed_hosts": [
-      "127.0.0.1",
-      "localhost"
+      "scholarships.gov.in"
     ],
-    "description": "Safe offline demonstration fixture modeling scholarship application workflows, fields, and safety boundaries.",
-    "category": "demonstration",
+    "description": "National Scholarship Portal — single online platform for central and state government scholarships.",
+    "category": "education",
     "entry_points": [
       {
-        "name": "Demo Application",
-        "url": "http://127.0.0.1:8000/fixture/demo-portal"
+        "name": "NSP Homepage",
+        "url": "https://scholarships.gov.in/"
       }
     ],
     "sensitive_actions": [
       "submit_application",
+      "enter_aadhaar",
+      "enter_otp"
+    ]
+  },
+  {
+    "id": "pm-kisan",
+    "name": "PM-Kisan Samman Nidhi",
+    "state": "National / India",
+    "url": "https://pmkisan.gov.in/",
+    "allowed_hosts": [
+      "pmkisan.gov.in"
+    ],
+    "description": "Pradhan Mantri Kisan Samman Nidhi portal for beneficiary farmers.",
+    "category": "agriculture",
+    "entry_points": [
+      {
+        "name": "PM Kisan Homepage",
+        "url": "https://pmkisan.gov.in/"
+      }
+    ],
+    "sensitive_actions": [
+      "enter_aadhaar",
       "enter_otp",
-      "fee_payment"
+      "bank_details"
     ]
   }
 ]
