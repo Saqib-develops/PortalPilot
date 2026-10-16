@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Uttar Pradesh Scholarship Demo Portal</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f8fafc; color: #1e293b; }
+    header { background: #1e3a8a; color: white; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+    .nav-links a { color: #93c5fd; margin-right: 15px; text-decoration: none; font-weight: 500; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+    input, select { width: 100%; max-width: 400px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    button { padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .badge { display: inline-block; padding: 4px 8px; background: #e0e7ff; color: #3730a3; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Uttar Pradesh Scholarship & Fee Reimbursement Online System</h1>
+    <p>Social Welfare Department, Government of Uttar Pradesh (Demonstration Fixture)</p>
+    <div class="nav-links">
+      <a href="http://127.0.0.1:8000/fixture/demo-portal">Home</a>
+      <a href="http://127.0.0.1:8000/fixture/demo-portal?page=guidelines" id="link-guidelines">Instructions and Guidelines</a>
+      <a href="http://127.0.0.1:8000/fixture/demo-portal?page=register" id="link-register">Student Registration</a>
+      <a href="http://127.0.0.1:8000/fixture/demo-portal?page=status" id="link-status">Application Status Check</a>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>Scholarship Eligibility & Guidelines</h2>
+    <p>Post-matric and pre-matric scholarships are open for eligible students belonging to SC, ST, OBC, General, and Minority categories in Uttar Pradesh.</p>
+    <ul>
+      <li>Annual family income must not exceed INR 2,50,000 for SC/ST and INR 2,00,000 for General/OBC.</li>
+      <li>Applicant must be enrolled in a recognized UP educational institution.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Student Application Assistance Form</h2>
+    <form id="scholarship-form">
+      <div class="form-group">
+        <label for="applicant_name">Student Full Name</label>
+        <input type="text" id="applicant_name" name="applicant_name" placeholder="Enter student name">
+      </div>
+      <div class="form-group">
+        <label for="category">Social Category</label>
+        <select id="category" name="category">
+          <option value="">Select Category</option>
+          <option value="General">General</option>
+          <option value="OBC">Other Backward Class (OBC)</option>
+          <option value="SC">Scheduled Caste (SC)</option>
+          <option value="ST">Scheduled Tribe (ST)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="course_name">Course / Program of Study</label>
+        <input type="text" id="course_name" name="course_name" placeholder="e.g. B.Tech / Diploma / Higher Secondary">
+      </div>
+      <div class="form-group">
+        <label for="otp">One-Time Password (OTP)</label>
+        <input type="text" id="otp" name="otp" placeholder="Confidential 6-digit OTP (Human Only)">
+      </div>
+      <button type="submit" id="final_submit_btn">Final Submit Application</button>
+    </form>
+  </div>
+</body>
+</html>
