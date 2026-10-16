@@ -1,4 +1,7 @@
 
+import os
+import subprocess
+import sys
 from urllib.parse import urlparse
 
 from playwright.sync_api import (
@@ -31,6 +34,44 @@ def _is_allowed_url(url: str) -> bool:
 
 def _clean_text(value: str, limit: int = MAX_TEXT_LENGTH) -> str:
     return " ".join(value.split())[:limit]
+
+
+def _install_playwright_browser() -> None:
+    """Install Chromium if the Playwright browser is missing."""
+    result = subprocess.run(
+        [sys.executable, "-m", "playwright", "install", "chromium"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        details = (result.stderr or result.stdout or "Unknown installation error.").strip()
+        raise PortalInspectionError(
+            "Playwright Chromium is not installed. Automatic installation failed. "
+            "Run this command in the backend environment and try again:\n"
+            "  python -m playwright install chromium\n\n"
+            f"Install output:\n{details}"
+        )
+
+
+def _ensure_playwright_ready() -> None:
+    """Checks whether the browser binary is present and installs it if missing."""
+    try:
+        with sync_playwright() as p:
+            executable = p.chromium.executable_path
+            if not os.path.exists(executable):
+                _install_playwright_browser()
+    except PortalInspectionError:
+        raise
+    except Exception as exc:  # pragma: no cover - platform/browser installation issues
+        message = str(exc)
+        if "Executable doesn't exist" in message or "Executable doesn't exist at" in message:
+            _install_playwright_browser()
+            return
+        raise PortalInspectionError(
+            f"Browser setup check failed: {type(exc).__name__}: {exc}"
+        ) from exc
 
 
 def _observe_page(page) -> dict[str, object]:
@@ -169,6 +210,7 @@ def _open_portal():
 def inspect_up_scholarship() -> dict[str, str]:
     """Preserve the original title-and-URL inspection."""
     try:
+        _ensure_playwright_ready()
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             try:
@@ -206,6 +248,7 @@ def inspect_up_scholarship() -> dict[str, str]:
 def observe_up_scholarship() -> dict[str, object]:
     """Inspect visible page structure without interacting with the page."""
     try:
+        _ensure_playwright_ready()
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             try:
