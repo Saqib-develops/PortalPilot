@@ -24,6 +24,14 @@ Backend endpoints:
 - `GET http://localhost:8000/api/health`
 - `POST http://localhost:8000/api/portal/inspect`
 
+If Playwright raises a missing-browser error, install Chromium in the backend environment with:
+
+```powershell
+cd backend
+py -m pip install -r requirements.txt
+py -m playwright install chromium
+```
+
 ## 2. Start the frontend (a second terminal)
 
 ```powershell
