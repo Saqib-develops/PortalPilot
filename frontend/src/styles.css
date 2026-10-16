@@ -56,6 +56,23 @@ textarea:focus { border-color:#6ca88b; box-shadow:0 0 0 3px #e7f3eb; }
 .step-tag { margin-left:auto; padding:5px 7px; border-radius:6px; color:#39775b; background:#eaf5ed; font-size:9px; white-space:nowrap; }
 .step-tag.muted { background:#f2f4f0; color:#7e8a80; }
 .activity-panel { padding:22px; min-height:400px; }
+.live-preview-panel { padding:16px; }
+.live-preview-url { margin:5px 0 0; color:#718078; font-size:10px; overflow-wrap:anywhere; }
+.live-preview-image { display:block; width:100%; max-height:380px; margin-top:13px; border:1px solid #e4e9e2; border-radius:10px; object-fit:contain; background:#f8fafc; }
+.live-preview-placeholder { display:flex; min-height:150px; align-items:center; justify-content:center; gap:9px; color:#718078; font-size:12px; }
+.live-preview-stage { margin:9px 0 0; color:#75847a; font-size:10px; text-transform:capitalize; }
+.access-dialog-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; overflow-y:auto; padding:20px; background:#10221dc9; }
+.access-dialog { width:min(540px,100%); padding:25px; border:1px solid #e2e8e0; border-radius:18px; background:white; box-shadow:0 22px 80px #07140f66; }
+.access-dialog-icon { display:grid; place-items:center; width:44px; height:44px; margin-bottom:13px; border-radius:13px; background:#e7f2eb; color:#2c7159; }
+.access-dialog h2 { margin:0; color:#193b35; font-size:21px; letter-spacing:-.5px; }
+.access-dialog-intro { margin:10px 0; color:#64736a; font-size:13px; line-height:1.6; }
+.access-capabilities { display:grid; gap:9px; margin:0; padding:0 0 0 20px; color:#53645a; font-size:12px; line-height:1.6; }
+.access-boundary { display:grid; gap:5px; margin-top:16px; padding:12px; border:1px solid #f0dfbc; border-radius:10px; color:#77511b; background:#fff9ed; font-size:11px; line-height:1.55; }
+.access-consent { display:flex; align-items:flex-start; gap:9px; margin-top:17px; color:#33483c; font-size:12px; line-height:1.5; }
+.access-consent input { width:16px; height:16px; flex-shrink:0; margin:1px 0 0; accent-color:#20584a; }
+.access-dialog-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:20px; }
+.access-dialog-actions .primary-button { width:auto; }
+.access-cancel-button { padding:10px 14px; border:1px solid #dfe6de; border-radius:9px; color:#53645a; background:white; font-size:12px; font-weight:700; }
 .activity-heading { display:flex; justify-content:space-between; align-items:center; gap:10px; }
 .activity-heading h2 { display:flex; align-items:center; gap:8px; }
 .live-pill { display:flex; align-items:center; gap:6px; border:1px solid #e4e9e2; border-radius:20px; padding:5px 8px; color:#718078; font-size:9px; font-weight:800; letter-spacing:.5px; }
@@ -88,3 +105,4 @@ footer { display:flex; justify-content:space-between; gap:10px; padding:25px 0 2
 @keyframes spin { to { transform:rotate(360deg); } }
 @media (max-width:850px) { .app-shell { padding:0 20px; } .workspace { grid-template-columns:1fr; } .hero { padding-top:35px; } }
 @media (max-width:480px) { .app-shell { padding:0 14px; } .topbar { height:67px; } .status-label { display:none; } .hero h1 { letter-spacing:-1.3px; } .task-panel,.steps-panel,.activity-panel { padding:17px; } .portal-chip { flex-wrap:wrap; } .portal-chip strong { margin-left:0; } footer { flex-direction:column; } }
+@media (max-width:480px) { .access-dialog { padding:19px; } .access-dialog-actions { flex-direction:column-reverse; } .access-dialog-actions > button { width:100%; } }

@@ -1,38 +1,43 @@
-# PortalPilot Starter
+# PortalPilot
 
-A minimal working starter for PortalPilot: a React + Vite + Tailwind UI and a FastAPI backend that inspects the **real UP Scholarship portal** using Playwright.
+PortalPilot is an open-source AI browser agent designed for Hacktoberfest 2026 by Team CommitKebabs. It assists citizens in navigating complex government portals—starting with the Uttar Pradesh Scholarship Portal—by observing live webpage structures, planning safe next actions with Google GenAI (Gemma / Gemini), validating every operation against strict human-in-the-loop safety boundaries, and verifying post-action state.
 
-## Requirements
-- Python 3.11+
-- Node.js 20+
-- Internet access for the first browser navigation
+## Core Capabilities
 
-## 1. Start the backend (Windows PowerShell)
+- Playwright browser engine managing live page state, headings, links, interactive buttons, and non-sensitive inputs.
+- Explicit page-access notice before the workspace or on-page agent starts inspecting or controlling a portal; access can be revoked.
+- Live browser screenshots and task progress while the agent scrolls and navigates the selected portal.
+- Provider abstraction supporting Gemma 4 (`gemma-4-26b-a4b-it`), Gemini, or deterministic fallback if API keys are absent.
+- Configurable portal registry (`portals.json`) with allowlisted domains and entry points.
+- Safety policy blocking unauthorized cross-domain redirects, dangerous URL schemes, passwords, OTPs, captchas, and automated final submissions.
+- Interactive human handoff requiring explicit human approval before proceeding with sensitive or irreversible operations.
+- Full test suite with unit and integration smoke tests.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` or set in `backend/.env`:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMMA_MODEL=gemma-4-26b-a4b-it
+```
+
+If `GEMINI_API_KEY` is not provided, PortalPilot automatically operates in deterministic mode using rule-based page inspection and portal registry navigation.
+
+## Quickstart
+
+### 1. Backend Setup & Run (Windows PowerShell)
 
 ```powershell
-cd backend
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 playwright install chromium
+$env:PYTHONPATH="backend"
 uvicorn app.main:app --reload --port 8000
 ```
 
-If PowerShell blocks activation, use `Set-ExecutionPolicy -Scope Process Bypass` in that terminal, then activate again.
-
-Backend endpoints:
-- `GET http://localhost:8000/api/health`
-- `POST http://localhost:8000/api/portal/inspect`
-
-If Playwright raises a missing-browser error, install Chromium in the backend environment with:
-
-```powershell
-cd backend
-py -m pip install -r requirements.txt
-py -m playwright install chromium
-```
-
-## 2. Start the frontend (a second terminal)
+### 2. Frontend Setup & Run
 
 ```powershell
 cd frontend
@@ -40,17 +45,43 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually `http://localhost:5173`.
+Open `http://localhost:5173` in your browser.
 
-## What works in this starter
-- Basic PortalPilot UI with a task box and activity log.
-- Health check against FastAPI.
-- A real Playwright session that visits the public UP Scholarship homepage and returns the observed page title and URL.
-- Domain allowlisting for navigation.
+## API Documentation
 
-## What is deliberately not implemented yet
-- Gemma model calls / agent planning.
-- Automated login, OTP, CAPTCHA, form submission, or bypassing site protections.
-- General-purpose arbitrary website navigation.
+Interactive OpenAPI documentation is available at `http://127.0.0.1:8000/docs`.
 
-Next milestone: replace the inspect-only action with a structured observe → plan → validate → act → verify loop, then integrate the eligible Gemma API model.
+Key Endpoints:
+- `GET /health` or `GET /api/health`: System health and dependency readiness.
+- `GET /api/portals`: Registered portals and entry points.
+- `POST /api/tasks`: Initiate a natural-language agent task after the user confirms access (`access_confirmed: true`).
+- `GET /api/tasks/{task_id}`: Retrieve task lifecycle state, progress, and verified steps.
+- `POST /api/tasks/{task_id}/approve`: Approve a pending sensitive action.
+- `POST /api/tasks/{task_id}/cancel`: Cancel a task.
+- `GET /api/browser/state`: Observe active browser URL, title, visible text, and interactive elements.
+- `POST /api/browser/navigate`: Navigate to an allowlisted portal or page.
+- `POST /api/browser/launch`: Open the selected portal in a new headed-browser tab with the PortalPilot bubble.
+- `POST /api/browser/crawl`: Crawl the active page; an optional `query` returns matching page content.
+- `POST /api/browser/action`: Execute a validated safe click, fill, or select.
+- `POST /api/assistant/chat`: Conversational guidance grounded in observed portal pages.
+- `POST /api/portal/plan`: Observe portal and generate a structured single-step proposal.
+- `GET /fixture/demo-portal`: Local offline test fixture modeling UP scholarship forms and safety boundaries.
+
+## Running Tests
+
+Execute the automated test suite with:
+
+```powershell
+$env:PYTHONPATH="backend"
+.\.venv\Scripts\python.exe -m pytest backend/tests/test_backend.py -v
+```
+
+## Quick Demonstration Sequence
+
+1. Open `http://localhost:5173` in your browser.
+2. Select target portal: **PortalPilot Safe Demo Playground** (or **UP Scholarship Portal**).
+3. Switch mode to **Plan Only** and click **Ask PortalPilot to Plan**. Observe that Gemma / deterministic provider inspects the page, extracts links and form fields, and proposes a safe action without mutating page state.
+4. Submit `Open student registration form`. Review the access notice and click **Allow access & continue**.
+5. Watch the live portal screenshot and headed browser as the agent scrolls to and opens the matching registration link.
+6. When attempting sensitive inputs or submission, observe that the agent pauses and presents human approval controls.
+7. Use the on-page PortalPilot bubble to ask a question; it crawls the active page for query-matched content before replying.
